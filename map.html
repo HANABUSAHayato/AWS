@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>地図表示</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-language/v1.0.0/mapbox-gl-language.js'></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" type="text/css">
+<style>
+  body { margin: 0; padding: 0; }
+  #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  .popup-img { max-width: 100%; height: auto; }
+  .mapboxgl-ctrl-top-left {
+    top: 10px;
+    left: 10px;
+  }
+  .mapboxgl-ctrl-top-right {
+    top: 10px;
+    right: 10px;
+  }
+  .mapboxgl-ctrl-geocoder input {
+    padding-left: 30px; /* 適切な余白を設定 */
+  }
+  /* マテリアルデザインのボタンスタイル */
+  #toggleDirections {
+    position: absolute;
+    bottom: 33px;
+    left: 65px;
+    background-color: #0000ff; /* 青い背景色 */
+    color: #ffffff; /* 白いテキスト色 */
+    border: none;
+    border-radius: 50%; /* 丸い形状 */
+    padding: 10px; /* 適宜調整 */
+    cursor: pointer;
+    font-size: 20px;
+    z-index: 1; /* ボタンを地図の上に配置 */
+  }
+  #toggleSearch {
+    position: absolute;
+    bottom: 33px;
+    left: 10px; /* ボタンをルート検索ボタンの右に配置 */
+    background-color: #FF0000; /* 赤い背景色 */
+    color: #ffffff; /* 白いテキスト色 */
+    border: none;
+    border-radius: 90%; /* 丸い形状 */
+    padding: 8px; /* 適宜調整 */
+    cursor: pointer;
+    font-size: 20px;
+    font-family: 'Material Icons';
+    z-index: 1; /* ボタンを地図の上に配置 */
+  }
+  #info-bar {
+    position: fixed;
+    bottom: 5px;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    padding: 10px;
+    display: none;
+    /* フレックスボックスを使用して中央に配置 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center; /* テキストを中央に配置するために追加 */
+  }
+  #info-bar h3 {
+    font-size: 16px; /* タイトルのフォントサイズを小さく調整 */
+    margin-bottom: 5px; /* タイトルと本文の間隔を調整 */
+  }
+  
+  #info-bar p {
+    font-size: 12px; /* 本文のフォントサイズを小さく調整 */
+    margin: 0; /* マージンをリセットして余白をなくす */
+  }
+  
+  #info-bar img.popup-img {
+    max-width: 100%; /* 画像の幅を親要素に合わせる */
+    max-height: 100px; /* 画像の最大高さを指定（適宜調整） */
+    width: auto; /* アスペクト比を維持したまま幅を自動調整 */
+    height: auto; /* アスペクト比を維持したまま高さを自動調整 */
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="info-bar"></div>
+<button id="toggleDirections">TD</button>
+<button id="toggleSearch" class="material-icons">SR</button>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaGF5YXRvaGFuYWJ1c2EiLCJhIjoiY2xueTg1YXM3MGx0ZjJrcWJia2xxN21tOSJ9.fpiAnWbpFCr1jUfOg12GBQ';
+
+  var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    language: 'ja',
+    center: [0, 0],
+    zoom: 14
+  });
+
+  navigator.geolocation.getCurrentPosition(function (position) {
+    var lng = position.coords.longitude;
+    var lat = position.coords.latitude;
+
+    map.setCenter([lng, lat]);
+
+    
+  });
+
+  mapboxgl.setRTLTextPlugin('https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js');
+    map.addControl(new MapboxLanguage({
+      defaultLanguage: 'ja'
+    }));
+
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+    const customData = {
+        'features': [
+            {
+                'type': 'Feature',
+                'properties': {
+                    'title': '金沢市営額住宅前駅自転車駐車場',
+                    'image': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=08HV-t1V6NJWLL6JsOr4jA&cb_client=search.gws-prod.gps&w=408&h=240&yaw=341.57434&pitch=0&thumbfov=100',
+                },
+                'geometry': {
+                    'coordinates': [136.62030215442545,36.51816661700493],
+                    'type': 'Point'
+                }
+            },
+            {
+                'type': 'Feature',
+                'properties': {
+                    'title': '金沢市営光が丘２丁目自転車駐車場',
+                    'image': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=1IaIXfFSzy5699VykkhuQA&cb_client=search.gws-prod.gps&w=408&h=240&yaw=318.74768&pitch=0&thumbfov=100',  
+                },
+                'geometry': {
+                    'coordinates': [136.62442202734212,36.51292400537082],
+                    'type': 'Point'
+                }
+            },
+            {
+                'type': 'Feature',
+                'properties': {
+                    'title': '道法寺駅自転車駐車場',
+                    'image': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=n370rbpY4EpFuSV8qLnz1Q&cb_client=search.gws-prod.gps&w=408&h=240&yaw=40.482468&pitch=0&thumbfov=100',
+                },
+                'geometry': {
+                    'coordinates': [136.61034579487685,36.48311715079412],
+                    'type': 'Point'
+                }
+            },
+      
+        ],
+        'type': 'FeatureCollection'
+      };
+
+    function forwardGeocoder(query) {
+      const matchingFeatures = [];
+      for (const feature of customData.features) {
+        if (feature.properties.title.toLowerCase().includes(query.toLowerCase())) {
+          feature['place_name'] = `🚲 ${feature.properties.title}`;
+          feature['center'] = feature.geometry.coordinates;
+          feature['place_type'] = ['park'];
+          matchingFeatures.push(feature);
+        }
+      }
+      return matchingFeatures;
+    }
+
+    customData.features.forEach(feature => {
+      const el = document.createElement('div');
+      el.className = 'marker';
+
+      new mapboxgl.Marker(el)
+        .setLngLat(feature.geometry.coordinates)
+        .setPopup(new mapboxgl.Popup({ offset: 25 })
+          .setHTML(`
+            <h3>${feature.properties.title}</h3>
+            <img class="popup-img" src="${feature.properties.image}" alt="Image">
+          `)
+        )
+        .addTo(map);
+    });
+
+    map.on('load', () => {
+      map.addSource('markers', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: customData.features
+        }
+      });
+
+      map.addLayer({
+        id: 'markers',
+        type: 'symbol',
+        source: 'markers',
+        layout: {
+          'icon-image': 'custom-marker',
+          'icon-allow-overlap': true
+        }
+      });
+
+      map.loadImage(
+        'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
+        (error, image) => {
+          if (error) throw error;
+          map.addImage('custom-marker', image);
+        }
+      );
+    });
+
+    map.on('click', function (e) {
+      if (!document.getElementById('info-bar').contains(e.originalEvent.target)) {
+        document.getElementById('info-bar').style.display = 'none';
+      }
+      // マーカーを地図に追加
+    customData.features.forEach(feature => {
+        const el = document.createElement('div');
+        el.className = 'marker';
+
+        new mapboxgl.Marker(el)
+            .setLngLat(feature.geometry.coordinates)
+            .addTo(map);
+    });
+
+        // クリック時のイベントハンドラ
+        map.on('click', 'markers', function (e) {
+            var coordinates = e.features[0].geometry.coordinates.slice();
+            var title = e.features[0].properties.title;
+            var image = e.features[0].properties.image;
+
+            // バーに情報を表示
+            document.getElementById('info-bar').innerHTML = `
+                <h3>${title}</h3>
+                <p>緯度: ${coordinates[1]}<br>経度: ${coordinates[0]}</p>
+                <img class="popup-img" src="${image}" alt="Image">
+            `;
+
+            // バーを表示
+            document.getElementById('info-bar').style.display = 'block';
+        });
+
+    });
+
+    map.on('mouseenter', 'markers', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'markers', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
+    //ルート検索用のトグルの作成
+    var directionsControl = new MapboxDirections({
+        accessToken: mapboxgl.accessToken,
+        unit: 'metric',
+        language: 'ja',
+        profile: 'mapbox/cycling',
+        alternatives: true,
+      });
+
+      // ボタンをクリックしたときのトグル処理
+    document.getElementById('toggleDirections').addEventListener('click', function () {
+        if (map.hasControl(directionsControl)) {
+          map.removeControl(directionsControl);
+        } else {
+          map.addControl(directionsControl, 'top-left');
+        }
+      });
+
+      //検索用トグルの作成
+      var geocoderControl = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        localGeocoder: forwardGeocoder,
+        zoom: 14,
+        mapboxgl: mapboxgl,
+        placeholder: '駐輪場が検索できます',
+      });
+
+    // ボタンをクリックしたときのトグル処理（検索）
+    document.getElementById('toggleSearch').addEventListener('click', function () {
+        if (map.hasControl(geocoderControl)) {
+          map.removeControl(geocoderControl);
+        } else {
+          map.addControl(geocoderControl, 'top-right');
+        }
+      });
+    
+      //現在地を表示する
+      map.addControl(
+        new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true,
+            showUserHeading: true
+        }),
+        'bottom-right'
+    );
+</script>
+
+</body>
+</html>
