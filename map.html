@@ -94,8 +94,9 @@
 <button id="toggleSearch" class="material-icons">SR</button>
 
 <script>
+  //アクセストークン
   mapboxgl.accessToken = 'pk.eyJ1IjoiaGF5YXRvaGFuYWJ1c2EiLCJhIjoiY2xueTg1YXM3MGx0ZjJrcWJia2xxN21tOSJ9.fpiAnWbpFCr1jUfOg12GBQ';
-
+  //マップを表示する部分
   var map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/streets-v11',
@@ -103,7 +104,7 @@
     center: [0, 0],
     zoom: 14
   });
-
+  //現在地スタートとする部分
   navigator.geolocation.getCurrentPosition(function (position) {
     var lng = position.coords.longitude;
     var lat = position.coords.latitude;
@@ -159,7 +160,7 @@
         ],
         'type': 'FeatureCollection'
       };
-
+    //検索機能で検索したときに、上のcustomDataと同じ部分の文字列が入力されたとき、自転車のマーク込みで一部表示される
     function forwardGeocoder(query) {
       const matchingFeatures = [];
       for (const feature of customData.features) {
@@ -206,7 +207,8 @@
           'icon-allow-overlap': true
         }
       });
-
+      
+      //駐輪場を示すアイコン
       map.loadImage(
         'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
         (error, image) => {
@@ -215,7 +217,8 @@
         }
       );
     });
-
+  
+    //駐輪場のマーカーに対しての処理
     map.on('click', function (e) {
       if (!document.getElementById('info-bar').contains(e.originalEvent.target)) {
         document.getElementById('info-bar').style.display = 'none';
@@ -293,7 +296,7 @@
         }
       });
     
-      //現在地を表示する
+      //現在地を表示するボタン
       map.addControl(
         new mapboxgl.GeolocateControl({
             positionOptions: {
